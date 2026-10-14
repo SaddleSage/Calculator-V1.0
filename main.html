@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aesthetic Calculator - Sadlesage</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- JSZip & FileSaver for Zip Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            --glass-bg: rgba(255, 255, 255, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --btn-bg: rgba(255, 255, 255, 0.6);
+            --btn-hover: rgba(255, 255, 255, 0.85);
+            --btn-active: rgba(255, 255, 255, 0.4);
+            --accent-bg: #805ad5;
+            --accent-text: #ffffff;
+        }
+
+        .dark {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            --glass-bg: rgba(30, 41, 59, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --btn-bg: rgba(51, 65, 85, 0.5);
+            --btn-hover: rgba(71, 85, 105, 0.7);
+            --btn-active: rgba(30, 41, 59, 0.7);
+            --accent-bg: #a855f7;
+            --accent-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            transition: background 0.5s ease;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .calc-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .calc-btn:hover {
+            background: var(--btn-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .calc-btn:active, .calc-btn.btn-pressed {
+            transform: translateY(1px);
+            background: var(--btn-active);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .calc-btn-accent {
+            background: linear-gradient(135deg, #c084fc, #9333ea);
+            color: white;
+            border: none;
+        }
+
+        .calc-btn-accent:hover {
+            background: linear-gradient(135deg, #d8b4fe, #a855f7);
+            box-shadow: 0 6px 16px rgba(147, 51, 234, 0.35);
+        }
+
+        .calc-btn-operator {
+            background: rgba(236, 72, 153, 0.15);
+            color: #db2777;
+            font-weight: 600;
+        }
+
+        .dark .calc-btn-operator {
+            background: rgba(244, 114, 182, 0.15);
+            color: #f472b6;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.5);
+        }
+
+        /* Ambient Glow Effect */
+        .glow-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-4 min-h-screen relative overflow-x-hidden">
+
+    <div class="glow-circle w-96 h-96 bg-purple-400 top-10 -left-20 dark:bg-purple-900"></div>
+    <div class="glow-circle w-96 h-96 bg-pink-300 bottom-10 -right-20 dark:bg-indigo-900"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="w-full max-w-4xl z-10 flex flex-col items-center">
+        
+        <!-- HEADER / NAVBAR -->
+        <header class="w-full max-w-lg glass-panel rounded-2xl p-4 mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-300">
+                    <i data-lucide="calculator" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm tracking-wide text-gray-800 dark:text-gray-100">Sadlesage Calc</h1>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Aesthetic & Scientific</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Download Project ZIP Button -->
+                <button id="downloadZipBtn" title="Download Full Project Source (.zip)" 
+                        class="p-2 rounded-xl glass-panel text-gray-700 dark:text-gray-200 hover:bg-white/40 dark:hover:bg-slate-700/50 transition flex items-center gap-1.5 text-xs font-semibold px-3">
+                    <i data-lucide="download" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+                    <span class="hidden sm:inline">ZIP</span>
+                </button>
+
+                <!-- Mode Switcher (Basic / Sci) -->
+                <button id="modeToggleBtn" title="Toggle Scientific Mode" 
+                        class="p-2 rounded-xl glass-panel text-gray-700 dark:text-gray-200 hover:bg-white/40 dark:hover:bg-slate-700/50 transition flex items-center gap-1.5 text-xs font-semibold px-3">
+                    <i data-lucide="flask-conical" class="w-4 h-4 text-pink-500"></i>
+                    <span id="modeLabel" class="hidden sm:inline">Sci</span>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button id="themeToggleBtn" title="Toggle Theme" 
+                        class="p-2 rounded-xl glass-panel text-gray-700 dark:text-gray-200 hover:bg-white/40 dark:hover:bg-slate-700/50 transition">
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block text-amber-400"></i>
+                    <i data-lucide="moon" class="w-4 h-4 block dark:hidden text-indigo-600"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- CALCULATOR BODY & HISTORY CONTAINER -->
+        <div class="w-full flex flex-col md:flex-row gap-4 items-start justify-center max-w-4xl">
+            
+            <!-- MAIN CALCULATOR PANEL -->
+            <div id="calcBody" class="w-full max-w-lg glass-panel rounded-3xl p-6 transition-all duration-300">
+                
+                <!-- Display Section -->
+                <div class="relative bg-white/30 dark:bg-slate-800/40 rounded-2xl p-4 mb-5 text-right border border-white/40 dark:border-slate-700/50 shadow-inner">
+                    <!-- Copy Alert Toast -->
+                    <div id="copyToast" class="absolute top-3 left-3 opacity-0 transition-opacity duration-300 bg-purple-600 text-white text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-md shadow-sm">
+                        Copied!
+                    </div>
+
+                    <!-- Secondary display (equation history) -->
+                    <div id="historyDisplay" class="h-6 text-sm text-gray-400 dark:text-gray-400 font-medium overflow-hidden text-ellipsis whitespace-nowrap">
+                        &nbsp;
+                    </div>
+
+                    <!-- Main display -->
+                    <div class="flex items-center justify-between gap-2">
+                        <button id="copyBtn" title="Copy Result" class="text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition p-1">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                        <div id="mainDisplay" class="text-3xl sm:text-4xl font-semibold text-gray-800 dark:text-gray-100 overflow-x-auto custom-scrollbar tracking-tight py-1">
+                            0
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BUTTON GRID -->
+                <div id="buttonGrid" class="grid grid-cols-4 gap-2.5">
+                    
+                    <!-- SCIENTIFIC EXTRA BUTTONS (Hidden by default, toggled via JS) -->
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="sin">sin</button>
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="cos">cos</button>
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="tan">tan</button>
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="log">log</button>
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="sqrt">√</button>
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="pow">x²</button>
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="pi">π</button>
+                    <button class="calc-btn sci-btn hidden p-3 rounded-2xl text-xs font-semibold" data-action="e">e</button>
+
+                    <!-- STANDARD BUTTONS -->
+                    <button class="calc-btn p-4 rounded-2xl text-sm font-semibold text-pink-500 hover:text-pink-600" data-action="clear">AC</button>
+                    <button class="calc-btn p-4 rounded-2xl text-sm font-semibold text-purple-500 hover:text-purple-600" data-action="delete">
+                        <i data-lucide="backspace" class="w-5 h-5 mx-auto"></i>
+                    </button>
+                    <button class="calc-btn calc-btn-operator p-4 rounded-2xl text-base" data-action="percent">%</button>
+                    <button class="calc-btn calc-btn-operator p-4 rounded-2xl text-lg" data-action="divide">÷</button>
+
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="7">7</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="8">8</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="9">9</button>
+                    <button class="calc-btn calc-btn-operator p-4 rounded-2xl text-lg" data-action="multiply">×</button>
+
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="4">4</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="5">5</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="6">6</button>
+                    <button class="calc-btn calc-btn-operator p-4 rounded-2xl text-lg" data-action="subtract">-</button>
+
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="1">1</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="2">2</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="3">3</button>
+                    <button class="calc-btn calc-btn-operator p-4 rounded-2xl text-lg" data-action="add">+</button>
+
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-action="toggle-sign">±</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value="0">0</button>
+                    <button class="calc-btn p-4 rounded-2xl text-lg font-medium" data-value=".">.</button>
+                    <button class="calc-btn calc-btn-accent p-4 rounded-2xl text-lg font-bold shadow-lg" data-action="equals">=</button>
+                </div>
+            </div>
+
+            <!-- HISTORY LOG SIDE PANEL -->
+            <div id="historyPanel" class="w-full md:w-64 glass-panel rounded-3xl p-5 h-auto md:h-[460px] flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200/40 dark:border-slate-700/50">
+                        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <i data-lucide="history" class="w-4 h-4"></i>
+                            History
+                        </div>
+                        <button id="clearHistoryBtn" title="Clear History" class="text-xs text-gray-400 hover:text-pink-500 transition">
+                            Clear
+                        </button>
+                    </div>
+
+                    <div id="historyList" class="space-y-2 overflow-y-auto max-h-[320px] custom-scrollbar pr-1">
+                        <p id="emptyHistoryMsg" class="text-xs text-center text-gray-400 py-8 italic">No calculations yet</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-2 border-t border-gray-200/40 dark:border-slate-700/50 text-[11px] text-center text-gray-400 dark:text-gray-500">
+                    Made by <span class="font-semibold text-purple-500 dark:text-purple-400">Sadlesage</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        let currentValue = '0';
+        let previousValue = '';
+        let operator = null;
+        let waitingForOperand = false;
+        let history = [];
+        let isScientific = false;
+
+        // --- DOM ELEMENTS ---
+        const mainDisplay = document.getElementById('mainDisplay');
+        const historyDisplay = document.getElementById('historyDisplay');
+        const historyList = document.getElementById('historyList');
+        const emptyHistoryMsg = document.getElementById('emptyHistoryMsg');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const modeToggleBtn = document.getElementById('modeToggleBtn');
+        const modeLabel = document.getElementById('modeLabel');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyToast = document.getElementById('copyToast');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        const downloadZipBtn = document.getElementById('downloadZipBtn');
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // --- DISPLAY UPDATES ---
+        function updateDisplay() {
+            mainDisplay.textContent = formatNumber(currentValue);
+            
+            if (operator && previousValue) {
+                const opSymbol = getOperatorSymbol(operator);
+                historyDisplay.textContent = `${formatNumber(previousValue)} ${opSymbol}`;
+            } else {
+                historyDisplay.innerHTML = '&nbsp;';
+            }
+        }
+
+        function formatNumber(numStr) {
+            if (numStr === 'Error' || numStr === 'NaN') return 'Error';
+            if (numStr.includes('.')) {
+                const [intPart, decPart] = numStr.split('.');
+                return `${parseFloat(intPart).toLocaleString('en-US')}.${decPart}`;
+            }
+            const parsed = parseFloat(numStr);
+            return isNaN(parsed) ? '0' : parsed.toLocaleString('en-US', { maximumFractionDigits: 8 });
+        }
+
+        function getOperatorSymbol(op) {
+            switch(op) {
+                case 'add': return '+';
+                case 'subtract': return '-';
+                case 'multiply': return '×';
+                case 'divide': return '÷';
+                default: return '';
+            }
+        }
+
+        // --- CORE CALCULATOR LOGIC ---
+        function inputDigit(digit) {
+            if (waitingForOperand) {
+                currentValue = digit;
+                waitingForOperand = false;
+            } else {
+                if (currentValue === '0' && digit !== '.') {
+                    currentValue = digit;
+                } else if (digit === '.' && currentValue.includes('.')) {
+                    return;
+                } else {
+                    currentValue += digit;
+                }
+            }
+            updateDisplay();
+        }
+
+        function handleOperator(nextOperator) {
+            const inputValue = parseFloat(currentValue);
+
+            if (operator && waitingForOperand) {
+                operator = nextOperator;
+                updateDisplay();
+                return;
+            }
+
+            if (previousValue === '') {
+                previousValue = currentValue;
+            } else if (operator) {
+                const result = performCalculation(previousValue, currentValue, operator);
+                currentValue = String(result);
+                previousValue = currentValue;
+                updateDisplay();
+            }
+
+            waitingForOperand = true;
+            operator = nextOperator;
+            updateDisplay();
+        }
+
+        function performCalculation(first, second, op) {
+            const a = parseFloat(first);
+            const b = parseFloat(second);
+            if (isNaN(a) || isNaN(b)) return 0;
+
+            let res = 0;
+            switch(op) {
+                case 'add': res = a + b; break;
+                case 'subtract': res = a - b; break;
+                case 'multiply': res = a * b; break;
+                case 'divide': res = b === 0 ? 'Error' : a / b; break;
+                default: return b;
+            }
+
+            return typeof res === 'number' ? Math.round(res * 1e8) / 1e8 : res;
+        }
+
+        function handleEquals() {
+            if (!operator || previousValue === '') return;
+
+            const result = performCalculation(previousValue, currentValue, operator);
+            const equation = `${formatNumber(previousValue)} ${getOperatorSymbol(operator)} ${formatNumber(currentValue)} =`;
+            
+            // Add to history
+            addHistoryItem(equation, formatNumber(String(result)));
+
+            currentValue = String(result);
+            previousValue = '';
+            operator = null;
+            waitingForOperand = true;
+
+            historyDisplay.textContent = equation;
+            mainDisplay.textContent = formatNumber(currentValue);
+        }
+
+        function handleClear() {
+            currentValue = '0';
+            previousValue = '';
+            operator = null;
+            waitingForOperand = false;
+            updateDisplay();
+        }
+
+        function handleDelete() {
+            if (waitingForOperand) return;
+            if (currentValue.length === 1 || (currentValue.length === 2 && currentValue.startsWith('-'))) {
+                currentValue = '0';
+            } else {
+                currentValue = currentValue.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function handleScientific(action) {
+            const val = parseFloat(currentValue);
+            let res = 0;
+
+            switch(action) {
+                case 'sin': res = Math.sin(val * Math.PI / 180); break;
+                case 'cos': res = Math.cos(val * Math.PI / 180); break;
+                case 'tan': res = Math.tan(val * Math.PI / 180); break;
+                case 'log': res = Math.log10(val); break;
+                case 'sqrt': res = Math.sqrt(val); break;
+                case 'pow': res = Math.pow(val, 2); break;
+                case 'pi': res = Math.PI; break;
+                case 'e': res = Math.E; break;
+                case 'percent': res = val / 100; break;
+                case 'toggle-sign': res = val * -1; break;
+            }
+
+            currentValue = String(Math.round(res * 1e8) / 1e8);
+            waitingForOperand = true;
+            updateDisplay();
+        }
+
+        // --- HISTORY MANAGEMENT ---
+        function addHistoryItem(eq, res) {
+            history.unshift({ eq, res });
+            if (history.length > 15) history.pop();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            if (history.length === 0) {
+                emptyHistoryMsg.style.display = 'block';
+                return;
+            }
+            emptyHistoryMsg.style.display = 'none';
+
+            historyList.innerHTML = history.map((item, index) => `
+                <div onclick="useHistoryResult('${item.res}')" class="p-2.5 rounded-xl bg-white/40 dark:bg-slate-700/40 hover:bg-white/70 dark:hover:bg-slate-700/70 transition cursor-pointer text-right border border-white/20 dark:border-slate-600/30">
+                    <div class="text-[11px] text-gray-400 dark:text-gray-400">${item.eq}</div>
+                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">${item.res}</div>
+                </div>
+            `).join('');
+        }
+
+        window.useHistoryResult = function(res) {
+            currentValue = res.replace(/,/g, '');
+            waitingForOperand = false;
+            updateDisplay();
+        };
+
+        clearHistoryBtn.addEventListener('click', () => {
+            history = [];
+            renderHistory();
+        });
+
+        // --- COPY TO CLIPBOARD ---
+        copyBtn.addEventListener('click', () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = currentValue;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            copyToast.classList.remove('opacity-0');
+            setTimeout(() => copyToast.classList.add('opacity-0'), 1500);
+        });
+
+        // --- MODE TOGGLES ---
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        modeToggleBtn.addEventListener('click', () => {
+            isScientific = !isScientific;
+            const sciButtons = document.querySelectorAll('.sci-btn');
+            
+            sciButtons.forEach(btn => {
+                btn.classList.toggle('hidden', !isScientific);
+            });
+
+            modeLabel.textContent = isScientific ? 'Basic' : 'Sci';
+        });
+
+        // --- BUTTON CLICK ROUTING ---
+        document.getElementById('buttonGrid').addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+
+            const value = btn.dataset.value;
+            const action = btn.dataset.action;
+
+            if (value !== undefined) {
+                inputDigit(value);
+            } else if (action) {
+                if (['add', 'subtract', 'multiply', 'divide'].includes(action)) {
+                    handleOperator(action);
+                } else if (action === 'equals') {
+                    handleEquals();
+                } else if (action === 'clear') {
+                    handleClear();
+                } else if (action === 'delete') {
+                    handleDelete();
+                } else {
+                    handleScientific(action);
+                }
+            }
+        });
+
+        // --- KEYBOARD SUPPORT ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
+            if (e.key === '.') inputDigit('.');
+            if (e.key === '+') handleOperator('add');
+            if (e.key === '-') handleOperator('subtract');
+            if (e.key === '*') handleOperator('multiply');
+            if (e.key === '/') { e.preventDefault(); handleOperator('divide'); }
+            if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); handleEquals(); }
+            if (e.key === 'Backspace') handleDelete();
+            if (e.key === 'Escape') handleClear();
+            if (e.key === '%') handleScientific('percent');
+        });
+
+        // --- EMBEDDED ZIP GENERATOR FOR GITHUB REPO ---
+        downloadZipBtn.addEventListener('click', () => {
+            const zip = new JSZip();
+
+            // 1. Current HTML content
+            const htmlContent = document.documentElement.outerHTML;
+            zip.file("index.html", htmlContent);
+
+            // 2. Add README.md for GitHub
+            const readmeContent = `# 🎨 Aesthetic Calculator Web App
+
+A sleek, modern, glassmorphic calculator built with HTML, CSS (Tailwind CSS), and JavaScript.
+
+## ✨ Features
+- 🌸 **Aesthetic Soft Pastel UI:** Dynamic linear gradients and smooth blur effects.
+- 🌓 **Light & Dark Mode:** Easy switch for late-night calculations.
+- 🧪 **Scientific Mode Toggle:** Switch between basic arithmetic and trigonometry/logarithm functions.
+- ⌨️ **Keyboard Navigation:** Full support for standard numpad and keyboard shortcuts.
+- 📜 **Interactive History:** Keeps track of past calculations with single-click reuse.
+- 📋 **Copy to Clipboard:** One-tap copying of calculations.
+
+## 🚀 How to Run
+Simply open \`index.html\` in any modern browser!
+
+Developed with 💜 by **Sadlesage**.
+`;
+            zip.file("README.md", readmeContent);
+
+            // Generate and trigger download
+            zip.generateAsync({ type: "blob" }).then(function(content) {
+                saveAs(content, "Sadlesage-Aesthetic-Calculator.zip");
+            });
+        });
+    </script>
+</body>
+</html>
