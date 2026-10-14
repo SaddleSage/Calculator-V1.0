@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RETRO_CALC_SUITE // v1.0</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="terminal-container">
+        <header class="terminal-header">
+            <span class="sys-title">// RETRO_CALC_SUITE_</span>
+            <button id="theme-toggle" class="retro-btn">[ THEME: <span id="theme-name">DARK</span> ]</button>
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="calc">CALCULATOR</button>
+            <button class="tab-btn" data-tab="converter">CONVERTER</button>
+            <button class="tab-btn" data-tab="dnd">D&D ROLLER</button>
+        </nav>
+
+        <!-- CALCULATOR TAB -->
+        <main class="tab-content active" id="calc-tab">
+            <div class="display" id="calc-display">0</div>
+            <div class="keypad">
+                <button class="btn fn" onclick="clearDisplay()">AC</button>
+                <button class="btn fn" onclick="appendValue('(')">(</button>
+                <button class="btn fn" onclick="appendValue(')')">)</button>
+                <button class="btn op" onclick="appendValue('/')">&divide;</button>
+                
+                <button class="btn" onclick="appendValue('7')">7</button>
+                <button class="btn" onclick="appendValue('8')">8</button>
+                <button class="btn" onclick="appendValue('9')">9</button>
+                <button class="btn op" onclick="appendValue('*')">&times;</button>
+                
+                <button class="btn" onclick="appendValue('4')">4</button>
+                <button class="btn" onclick="appendValue('5')">5</button>
+                <button class="btn" onclick="appendValue('6')">6</button>
+                <button class="btn op" onclick="appendValue('-')">-</button>
+                
+                <button class="btn" onclick="appendValue('1')">1</button>
+                <button class="btn" onclick="appendValue('2')">2</button>
+                <button class="btn" onclick="appendValue('3')">3</button>
+                <button class="btn op" onclick="appendValue('+')">+</button>
+                
+                <button class="btn zero" onclick="appendValue('0')">0</button>
+                <button class="btn" onclick="appendValue('.')">.</button>
+                <button class="btn equals" onclick="calculate()">=</button>
+            </div>
+        </main>
+
+        <!-- CONVERTER TAB -->
+        <main class="tab-content" id="converter-tab">
+            <div class="converter-box">
+                <label>> SELECT_CONVERSION:</label>
+                <select id="conv-type" class="retro-select">
+                    <option value="length">Length (Meters &lt;&gt; Feet)</option>
+                    <option value="weight">Weight (Kg &lt;&gt; Lbs)</option>
+                    <option value="temp">Temperature (C &lt;&gt; F)</option>
+                </select>
+
+                <div class="conv-inputs">
+                    <input type="number" id="conv-input" placeholder="Enter value..." class="retro-input">
+                    <span class="arrow">></span>
+                    <div id="conv-output" class="retro-output">0.00</div>
+                </div>
+                <button class="btn equals full-width" onclick="convertUnits()">EXECUTE CONVERSION</button>
+            </div>
+        </main>
+
+        <!-- D&D ROLLER TAB -->
+        <main class="tab-content" id="dnd-tab">
+            <div class="dnd-box">
+                <label>> TABLETOP_DICE_ENGINE:</label>
+                <div class="dice-grid">
+                    <button class="retro-btn dice-btn" onclick="rollDice(4)">d4</button>
+                    <button class="retro-btn dice-btn" onclick="rollDice(6)">d6</button>
+                    <button class="retro-btn dice-btn" onclick="rollDice(8)">d8</button>
+                    <button class="retro-btn dice-btn" onclick="rollDice(10)">d10</button>
+                    <button class="retro-btn dice-btn" onclick="rollDice(12)">d12</button>
+                    <button class="retro-btn dice-btn" onclick="rollDice(20)">d20</button>
+                    <button class="retro-btn dice-btn" onclick="rollDice(100)">d100</button>
+                </div>
+                <div class="dice-result-display">
+                    <span class="result-label">RESULT:</span>
+                    <span id="dice-output" class="result-value">--</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
